@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
 	"github.com/rtsncs/remitly-swift-api/database"
 	"github.com/rtsncs/remitly-swift-api/handler"
@@ -26,6 +27,8 @@ func Start() {
 	defer db.Close()
 	h := handler.New(&db)
 	e.Logger.Info("Connected to the database")
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
 
 	g := e.Group("/v1/swift-codes")
 	g.GET("/:code", h.GetCode)
