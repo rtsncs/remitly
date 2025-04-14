@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -16,6 +17,11 @@ type SwiftCode struct {
 	CountryISO2 string `json:"countryISO2"`
 	CountryName string `json:"countryName"`
 	Headquarter bool   `json:"isHeadquarter"`
+}
+
+type SwiftCodeWithBranches struct {
+	SwiftCode
+	Branches []SwiftCode `json:"branches"`
 }
 
 type Database struct {
@@ -78,4 +84,44 @@ func (db *Database) InsertCode(c context.Context, code SwiftCode) error {
 		return fmt.Errorf("insert failed: %v", err)
 	}
 	return nil
+}
+
+func (db *Database) GetByCode(c context.Context, code string) (SwiftCode, error) {
+	sql := `
+	SELECT
+		code,
+		name,
+		address,
+		country_iso2,
+		country_name,
+		headquarter
+	FROM swift_codes
+	WHERE code = $1;
+	`
+	rows, err := db.pool.Query(c, sql, code)
+	if err != nil {
+		return SwiftCode{}, err
+	}
+
+	return pgx.CollectOneRow(rows, pgx.RowToStructByName[SwiftCode])
+}
+
+func (db *Database) GetBranches(c context.Context, headquaterCode string) ([]SwiftCode, error) {
+	sql := `
+	SELECT
+		code,
+		name,
+		address,
+		country_iso2,
+		country_name,
+		headquarter
+	FROM swift_codes
+	WHERE LEFT(code, 8) = $1 AND NOT code LIKE '%XXX';
+	`
+	rows, err := db.pool.Query(c, sql, headquaterCode[:8])
+	if err != nil {
+		return nil, err
+	}
+
+	return pgx.CollectRows(rows, pgx.RowToStructByName[SwiftCode])
 }
