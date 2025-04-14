@@ -15,7 +15,7 @@ type SwiftCode struct {
 	Name        string `json:"bankName"`
 	Address     string `json:"address"`
 	CountryISO2 string `json:"countryISO2"`
-	CountryName string `json:"countryName"`
+	CountryName string `json:"countryName,omitempty"`
 	Headquarter bool   `json:"isHeadquarter"`
 }
 
@@ -124,4 +124,35 @@ func (db *Database) GetBranches(c context.Context, headquaterCode string) ([]Swi
 	}
 
 	return pgx.CollectRows(rows, pgx.RowToStructByName[SwiftCode])
+}
+
+func (db *Database) GetCountryName(c context.Context, countryCode string) (string, error) {
+	sql := `
+	SELECT country_name
+	FROM swift_codes
+	WHERE country_iso2 = $1
+	LIMIT 1;
+	`
+	var name string
+	err := db.pool.QueryRow(c, sql, countryCode).Scan(&name)
+	return name, err
+}
+
+func (db *Database) GetByCountryCode(c context.Context, countryCode string) ([]SwiftCode, error) {
+	sql := `
+	SELECT
+		code,
+		name,
+		address,
+		country_iso2,
+		headquarter
+	FROM swift_codes
+	WHERE country_iso2 = $1;
+	`
+	rows, err := db.pool.Query(c, sql, countryCode)
+	if err != nil {
+		return nil, err
+	}
+
+	return pgx.CollectRows(rows, pgx.RowToStructByNameLax[SwiftCode])
 }

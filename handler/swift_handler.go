@@ -9,6 +9,12 @@ import (
 	"github.com/rtsncs/remitly-swift-api/database"
 )
 
+type responseByCountry struct {
+	CountryISO2 string               `json:"countryISO2"`
+	CountryName string               `json:"countryName"`
+	SwiftCodes  []database.SwiftCode `json:"swiftCodes"`
+}
+
 func (h *Handler) GetCode(c echo.Context) error {
 	code := c.Param("code")
 
@@ -29,4 +35,29 @@ func (h *Handler) GetCode(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, codeDetails)
+}
+
+func (h *Handler) GetByCountryCode(c echo.Context) error {
+	countryCode := c.Param("countryCode")
+
+	name, err := h.db.GetCountryName(c.Request().Context(), countryCode)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return echo.NewHTTPError(http.StatusNotFound)
+		}
+		return err
+	}
+
+	codes, err := h.db.GetByCountryCode(c.Request().Context(), countryCode)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			codes = nil
+		} else {
+			return err
+		}
+	}
+
+	response := responseByCountry{countryCode, name, codes}
+
+	return c.JSON(http.StatusOK, response)
 }
