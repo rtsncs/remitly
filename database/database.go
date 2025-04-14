@@ -11,12 +11,12 @@ import (
 )
 
 type SwiftCode struct {
-	Code        string `json:"swiftCode"`
-	Name        string `json:"bankName"`
 	Address     string `json:"address"`
+	Name        string `json:"bankName"`
 	CountryISO2 string `json:"countryISO2"`
 	CountryName string `json:"countryName,omitempty"`
 	Headquarter bool   `json:"isHeadquarter"`
+	Code        string `json:"swiftCode"`
 }
 
 type SwiftCodeWithBranches struct {
@@ -113,7 +113,6 @@ func (db *Database) GetBranches(c context.Context, headquaterCode string) ([]Swi
 		name,
 		address,
 		country_iso2,
-		country_name,
 		headquarter
 	FROM swift_codes
 	WHERE LEFT(code, 8) = $1 AND NOT code LIKE '%XXX';
@@ -123,7 +122,7 @@ func (db *Database) GetBranches(c context.Context, headquaterCode string) ([]Swi
 		return nil, err
 	}
 
-	return pgx.CollectRows(rows, pgx.RowToStructByName[SwiftCode])
+	return pgx.CollectRows(rows, pgx.RowToStructByNameLax[SwiftCode])
 }
 
 func (db *Database) GetCountryName(c context.Context, countryCode string) (string, error) {
