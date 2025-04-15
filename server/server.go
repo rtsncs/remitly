@@ -33,6 +33,7 @@ func Start() {
 	g := e.Group("/v1/swift-codes")
 	g.GET("/:code", h.GetCode)
 	g.GET("/country/:countryCode", h.GetByCountryCode)
+	g.POST("", h.AddCode)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()

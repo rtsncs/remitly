@@ -3,9 +3,11 @@ package server_test
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/testcontainers/testcontainers-go/modules/compose"
@@ -17,27 +19,209 @@ var (
 	apiPrefix = "/v1/swift-codes"
 )
 
-func TestGetCode(t *testing.T) {
-	resp, err := http.Get(address + apiPrefix + "/NONEXISTENT")
-	if err != nil {
-		t.Errorf("Response error: %v\n", err)
+func TestAddCode(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  string
+		output string
+		status int
+	}{
+		{
+			name: "valid headquarter code",
+			input: `{
+				"bankName": "Test Bank",
+				"address": "123 Test Street",
+				"countryISO2": "US",
+				"countryName": "United States",
+				"isHeadquarter": true,
+				"swiftCode": "TESTUS33XXX"
+			}`,
+			status: http.StatusCreated,
+			output: `{"message":"Created"}`,
+		},
+		{
+			name: "valid branch code",
+			input: `{
+				"bankName": "Test Bank",
+				"address": "123 Test Street",
+				"countryISO2": "US",
+				"countryName": "United States",
+				"isHeadquarter": false,
+				"swiftCode": "TESTUS33ABC"
+			}`,
+			status: http.StatusCreated,
+			output: `{"message":"Created"}`,
+		},
+		{
+			name: "valid headquarter code no branches",
+			input: `{
+				"bankName": "Test Bank",
+				"address": "123 Test Street",
+				"countryISO2": "US",
+				"countryName": "United States",
+				"isHeadquarter": true,
+				"swiftCode": "TESTUS23XXX"
+			}`,
+			status: http.StatusCreated,
+			output: `{"message":"Created"}`,
+		},
+		{
+			name: "duplicate code",
+			input: `{
+				"bankName": "Test Bank",
+				"address": "123 Test Street",
+				"countryISO2": "US",
+				"countryName": "United States",
+				"isHeadquarter": true,
+				"swiftCode": "TESTUS33XXX"
+			}`,
+			status: http.StatusConflict,
+			output: `{"message":"Swift code already exists"}`,
+		},
+		{
+			name: "invalid code",
+			input: `{
+				"bankName": "Test Bank",
+				"address": "123 Test Street",
+				"countryISO2": "US",
+				"countryName": "United States",
+				"isHeadquarter": true,
+				"swiftCode": "INVALID"
+			}`,
+			status: http.StatusBadRequest,
+			output: `{"message":"Validation Error: swiftCode is invalid"}`,
+		},
+		{
+			name:   "invalid json",
+			input:  `{`,
+			status: http.StatusBadRequest,
+			output: `{"message":"unexpected EOF"}`,
+		},
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusNotFound {
-		t.Errorf("Expected 404 Not Found, got: %d\n", resp.StatusCode)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			resp, err := http.Post(address+apiPrefix, "application/json", strings.NewReader(tc.input))
+			if err != nil {
+				t.Errorf("Failed to send request: %v\n", err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != tc.status {
+				t.Errorf("Expected %d status code, got: %d\n", tc.status, resp.StatusCode)
+			}
+
+			bodyBytes, err := io.ReadAll(resp.Body)
+			if err != nil {
+				t.Errorf("Failed to read response body: %v\n", err)
+			}
+			body := strings.Trim(string(bodyBytes), "\n")
+			if string(body) != tc.output {
+				t.Errorf("Expected:\n%s\ngot:\n%s\n", tc.output, body)
+			}
+		})
+	}
+}
+
+func TestGetCode(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  string
+		output string
+		status int
+	}{
+		{
+			name:   "valid branch",
+			input:  "/TESTUS33ABC",
+			status: http.StatusOK,
+			output: `{"address":"123 Test Street","bankName":"Test Bank","countryISO2":"US","countryName":"UNITED STATES","isHeadquarter":false,"swiftCode":"TESTUS33ABC"}`,
+		},
+		{
+			name:   "valid headquarter",
+			input:  "/TESTUS33XXX",
+			status: http.StatusOK,
+			output: `{"address":"123 Test Street","bankName":"Test Bank","countryISO2":"US","countryName":"UNITED STATES","isHeadquarter":true,"swiftCode":"TESTUS33XXX","branches":[{"address":"123 Test Street","bankName":"Test Bank","countryISO2":"US","isHeadquarter":false,"swiftCode":"TESTUS33ABC"}]}`,
+		},
+		{
+			name:   "valid headquarter no branches",
+			input:  "/TESTUS23XXX",
+			status: http.StatusOK,
+			output: `{"address":"123 Test Street","bankName":"Test Bank","countryISO2":"US","countryName":"UNITED STATES","isHeadquarter":true,"swiftCode":"TESTUS23XXX","branches":[]}`,
+		},
+		{
+			name:   "nonexistent code",
+			input:  "/NONEXISTENT",
+			status: http.StatusNotFound,
+			output: `{"message":"Not Found"}`,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			resp, err := http.Get(address + apiPrefix + tc.input)
+			if err != nil {
+				t.Errorf("Failed to send request: %v\n", err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != tc.status {
+				t.Errorf("Expected %d status code, got: %d\n", tc.status, resp.StatusCode)
+			}
+
+			bodyBytes, err := io.ReadAll(resp.Body)
+			if err != nil {
+				t.Errorf("Failed to read response body: %v\n", err)
+			}
+			body := strings.Trim(string(bodyBytes), "\n")
+			if string(body) != tc.output {
+				t.Errorf("Expected:\n%s\ngot:\n%s\n", tc.output, body)
+			}
+		})
 	}
 }
 
 func TestGetByCountryCode(t *testing.T) {
-	resp, err := http.Get(address + apiPrefix + "/countries/XX")
-	if err != nil {
-		t.Errorf("Response error: %v\n", err)
+	tests := []struct {
+		name   string
+		input  string
+		output string
+		status int
+	}{
+		{
+			name:   "valid country",
+			input:  "US",
+			status: http.StatusOK,
+			output: `{"countryISO2":"US","countryName":"UNITED STATES","swiftCodes":[{"address":"123 Test Street","bankName":"Test Bank","countryISO2":"US","isHeadquarter":true,"swiftCode":"TESTUS33XXX"},{"address":"123 Test Street","bankName":"Test Bank","countryISO2":"US","isHeadquarter":false,"swiftCode":"TESTUS33ABC"},{"address":"123 Test Street","bankName":"Test Bank","countryISO2":"US","isHeadquarter":true,"swiftCode":"TESTUS23XXX"}]}`,
+		},
+		{
+			name:   "nonexistent country",
+			input:  "XX",
+			status: http.StatusNotFound,
+			output: `{"message":"Not Found"}`,
+		},
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusNotFound {
-		t.Errorf("Expected 404 Not Found, got: %d\n", resp.StatusCode)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			resp, err := http.Get(address + apiPrefix + "/country/" + tc.input)
+			if err != nil {
+				t.Errorf("Failed to send request: %v\n", err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != tc.status {
+				t.Errorf("Expected %d status code, got: %d\n", tc.status, resp.StatusCode)
+			}
+
+			bodyBytes, err := io.ReadAll(resp.Body)
+			if err != nil {
+				t.Errorf("Failed to read response body: %v\n", err)
+			}
+			body := strings.Trim(string(bodyBytes), "\n")
+			if string(body) != tc.output {
+				t.Errorf("Expected:\n%s\ngot:\n%s\n", tc.output, body)
+			}
+		})
 	}
 }
 

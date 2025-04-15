@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/rtsncs/remitly-swift-api/database"
+	"github.com/rtsncs/remitly-swift-api/models"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -36,7 +37,7 @@ func LoadFromFile(path string) {
 			log.Printf("Invalid row %v (ivalid swift code length) ", row)
 			continue
 		}
-		code := database.SwiftCode{
+		code := models.SwiftCode{
 			CountryISO2: strings.ToUpper(row[0]),
 			Code:        row[1],
 			Name:        row[3],

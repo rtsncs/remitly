@@ -2,27 +2,13 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rtsncs/remitly-swift-api/models"
 )
-
-type SwiftCode struct {
-	Address     string `json:"address"`
-	Name        string `json:"bankName"`
-	CountryISO2 string `json:"countryISO2"`
-	CountryName string `json:"countryName,omitempty"`
-	Headquarter bool   `json:"isHeadquarter"`
-	Code        string `json:"swiftCode"`
-}
-
-type SwiftCodeWithBranches struct {
-	SwiftCode
-	Branches []SwiftCode `json:"branches"`
-}
 
 type Database struct {
 	pool *pgxpool.Pool
@@ -66,7 +52,7 @@ func (db *Database) createTable(c context.Context) error {
 	return err
 }
 
-func (db *Database) InsertCode(c context.Context, code SwiftCode) error {
+func (db *Database) InsertCode(c context.Context, code models.SwiftCode) error {
 	sql := `
 	INSERT INTO swift_codes (
 		code,
@@ -80,13 +66,10 @@ func (db *Database) InsertCode(c context.Context, code SwiftCode) error {
 	);
 	`
 	_, err := db.pool.Exec(c, sql, code.Code, code.Name, code.Address, code.CountryISO2, code.CountryName, code.Headquarter)
-	if err != nil {
-		return fmt.Errorf("insert failed: %v", err)
-	}
-	return nil
+	return err
 }
 
-func (db *Database) GetByCode(c context.Context, code string) (SwiftCode, error) {
+func (db *Database) GetByCode(c context.Context, code string) (models.SwiftCode, error) {
 	sql := `
 	SELECT
 		code,
@@ -100,13 +83,13 @@ func (db *Database) GetByCode(c context.Context, code string) (SwiftCode, error)
 	`
 	rows, err := db.pool.Query(c, sql, code)
 	if err != nil {
-		return SwiftCode{}, err
+		return models.SwiftCode{}, err
 	}
 
-	return pgx.CollectOneRow(rows, pgx.RowToStructByName[SwiftCode])
+	return pgx.CollectOneRow(rows, pgx.RowToStructByName[models.SwiftCode])
 }
 
-func (db *Database) GetBranches(c context.Context, headquaterCode string) ([]SwiftCode, error) {
+func (db *Database) GetBranches(c context.Context, headquaterCode string) ([]models.SwiftCode, error) {
 	sql := `
 	SELECT
 		code,
@@ -122,7 +105,7 @@ func (db *Database) GetBranches(c context.Context, headquaterCode string) ([]Swi
 		return nil, err
 	}
 
-	return pgx.CollectRows(rows, pgx.RowToStructByNameLax[SwiftCode])
+	return pgx.CollectRows(rows, pgx.RowToStructByNameLax[models.SwiftCode])
 }
 
 func (db *Database) GetCountryName(c context.Context, countryCode string) (string, error) {
@@ -137,7 +120,7 @@ func (db *Database) GetCountryName(c context.Context, countryCode string) (strin
 	return name, err
 }
 
-func (db *Database) GetByCountryCode(c context.Context, countryCode string) ([]SwiftCode, error) {
+func (db *Database) GetByCountryCode(c context.Context, countryCode string) ([]models.SwiftCode, error) {
 	sql := `
 	SELECT
 		code,
@@ -153,5 +136,5 @@ func (db *Database) GetByCountryCode(c context.Context, countryCode string) ([]S
 		return nil, err
 	}
 
-	return pgx.CollectRows(rows, pgx.RowToStructByNameLax[SwiftCode])
+	return pgx.CollectRows(rows, pgx.RowToStructByNameLax[models.SwiftCode])
 }

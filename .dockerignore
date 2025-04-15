@@ -6,3 +6,5 @@
 Dockerfile
 .dockerignore
 compose.yaml
+
+**/*_test.go
