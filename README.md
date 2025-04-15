@@ -16,6 +16,7 @@ cd remitly
 DATABASE_USERNAME=postgres
 DATABASE_PASSWORD=postgres
 DATABASE_NAME=swift
+API_PORT=8080
 ```
 
 3. Start services:
@@ -72,4 +73,14 @@ curl http://localhost:8080/v1/swift-codes/PTFIPLPWAAP
 ```
 ```json
 {"address":"UL CHLODNA 52  WARSZAWA, MAZOWIECKIE, 00-872","bankName":"PKO TOWARZYSTWO FUNDUSZY INWESTYCYJNYCH SA","countryISO2":"PL","countryName":"POLAND","isHeadquarter":false,"swiftCode":"PTFIPLPWAAP"}
+```
+
+## Testing
+Prerequisites:
+- [Go](https://go.dev/doc/install)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+
+To run the tests run:
+```bash
+go test -v ./...
 ```
