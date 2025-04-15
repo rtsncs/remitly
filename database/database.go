@@ -138,3 +138,12 @@ func (db *Database) GetByCountryCode(c context.Context, countryCode string) ([]m
 
 	return pgx.CollectRows(rows, pgx.RowToStructByNameLax[models.SwiftCode])
 }
+
+func (db *Database) DeleteByCode(c context.Context, code string) (int64, error) {
+	sql := `DELETE FROM swift_codes WHERE code = $1;`
+	tag, err := db.pool.Exec(c, sql, code)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}

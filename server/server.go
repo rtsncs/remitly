@@ -34,6 +34,7 @@ func Start() {
 	g.GET("/:code", h.GetCode)
 	g.GET("/country/:countryCode", h.GetByCountryCode)
 	g.POST("", h.AddCode)
+	g.DELETE("/:code", h.DeleteCode)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()

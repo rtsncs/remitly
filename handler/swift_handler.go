@@ -86,3 +86,17 @@ func (h *Handler) AddCode(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, genericResponse{http.StatusText(http.StatusCreated)})
 }
+
+func (h *Handler) DeleteCode(c echo.Context) error {
+	code := c.Param("code")
+
+	count, err := h.db.DeleteByCode(c.Request().Context(), code)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return echo.NewHTTPError(http.StatusNotFound)
+	}
+
+	return c.JSON(http.StatusOK, genericResponse{http.StatusText(http.StatusOK)})
+}

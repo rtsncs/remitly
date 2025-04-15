@@ -53,6 +53,19 @@ func TestAddCode(t *testing.T) {
 			output: `{"message":"Created"}`,
 		},
 		{
+			name: "valid branch code no headquarter",
+			input: `{
+				"bankName": "Test Bank",
+				"address": "123 Test Street",
+				"countryISO2": "PL",
+				"countryName": "POLAND",
+				"isHeadquarter": false,
+				"swiftCode": "TESTPL33ABC"
+			}`,
+			status: http.StatusCreated,
+			output: `{"message":"Created"}`,
+		},
+		{
 			name: "valid headquarter code no branches",
 			input: `{
 				"bankName": "Test Bank",
@@ -102,6 +115,61 @@ func TestAddCode(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			resp, err := http.Post(address+apiPrefix, "application/json", strings.NewReader(tc.input))
+			if err != nil {
+				t.Errorf("Failed to send request: %v\n", err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != tc.status {
+				t.Errorf("Expected %d status code, got: %d\n", tc.status, resp.StatusCode)
+			}
+
+			bodyBytes, err := io.ReadAll(resp.Body)
+			if err != nil {
+				t.Errorf("Failed to read response body: %v\n", err)
+			}
+			body := strings.Trim(string(bodyBytes), "\n")
+			if string(body) != tc.output {
+				t.Errorf("Expected:\n%s\ngot:\n%s\n", tc.output, body)
+			}
+		})
+	}
+}
+
+func TestDeleteCode(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  string
+		output string
+		status int
+	}{
+		{
+			name:   "existing code",
+			input:  "/TESTPL33ABC",
+			status: http.StatusOK,
+			output: `{"message":"OK"}`,
+		},
+		{
+			name:   "already deleted code",
+			input:  "/TESTPL33ABC",
+			status: http.StatusNotFound,
+			output: `{"message":"Not Found"}`,
+		},
+		{
+			name:   "nonexistent code",
+			input:  "/NONEXISTENT",
+			status: http.StatusNotFound,
+			output: `{"message":"Not Found"}`,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req, err := http.NewRequest(http.MethodDelete, address+apiPrefix+tc.input, nil)
+			if err != nil {
+				t.Errorf("Failed to create request: %v\n", err)
+			}
+			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
 				t.Errorf("Failed to send request: %v\n", err)
 			}
