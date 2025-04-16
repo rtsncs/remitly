@@ -22,35 +22,46 @@ func LoadFromFile(path string) {
 	defer f.Close()
 	log.Printf("Parsing file: %s\n", path)
 
-	rows, err := f.GetRows("Sheet1")
-	if err != nil {
-		log.Fatalf("Failed to get rows: %v\n", err)
-	}
+	sheets := f.GetSheetList()
 
-	inserted := 0
-	for i, row := range rows[1:] {
-		if len(row) < 7 {
-			log.Printf("Invalid row #%d %v: row too short ", i, row)
+	inserted, total, failed := 0, 0, 0
+	for _, sheet := range sheets {
+		log.Printf("Parsing sheet: %s\n", sheet)
+		rows, err := f.GetRows(sheet)
+		if err != nil {
+			log.Printf("Failed to get rows: %v\n", err)
 			continue
 		}
-		code := models.SwiftCode{
-			CountryISO2: strings.ToUpper(row[0]),
-			Code:        row[1],
-			Name:        row[3],
-			Address:     row[4],
-			CountryName: strings.ToUpper(row[6]),
-			Headquarter: strings.HasSuffix(row[1], "XXX"),
-		}
-		if err := code.Validate(); err != nil {
-			log.Printf("Invalid row #%d %v: %v\n", i+2, row, err)
-			continue
-		}
-		if err := db.InsertCode(c, code); err != nil {
-			log.Printf("Failed to insert row #%d %v: %v\n", i, row, err)
-		} else {
-			inserted++
+		total += len(rows) - 1
+
+		for i, row := range rows[1:] {
+			printIndex := i + 2
+			if len(row) < 7 {
+				log.Printf("Invalid row #%d %v: row too short\n", printIndex, row)
+				failed++
+				continue
+			}
+			code := models.SwiftCode{
+				CountryISO2: strings.ToUpper(row[0]),
+				Code:        row[1],
+				Name:        row[3],
+				Address:     row[4],
+				CountryName: strings.ToUpper(row[6]),
+				Headquarter: strings.HasSuffix(row[1], "XXX"),
+			}
+			if err := code.Validate(); err != nil {
+				log.Printf("Invalid row #%d %v: %v\n", printIndex, row, err)
+				failed++
+				continue
+			}
+			if err := db.InsertCode(c, code); err != nil {
+				log.Printf("Failed to insert row #%d %v: %v\n", printIndex, row, err)
+				failed++
+			} else {
+				inserted++
+			}
 		}
 	}
 
-	log.Printf("Inserted %d out of %d codes\n", inserted, len(rows)-1)
+	log.Printf("Total rows: %d; Inserted %d; Failed: %d\n", total, inserted, failed)
 }
