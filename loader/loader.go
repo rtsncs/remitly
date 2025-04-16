@@ -28,13 +28,9 @@ func LoadFromFile(path string) {
 	}
 
 	inserted := 0
-	for _, row := range rows[1:] {
+	for i, row := range rows[1:] {
 		if len(row) < 7 {
-			log.Printf("Invalid row %v (too short) ", row)
-			continue
-		}
-		if len(row[1]) != 11 {
-			log.Printf("Invalid row %v (ivalid swift code length) ", row)
+			log.Printf("Invalid row #%d %v: row too short ", i, row)
 			continue
 		}
 		code := models.SwiftCode{
@@ -43,11 +39,14 @@ func LoadFromFile(path string) {
 			Name:        row[3],
 			Address:     row[4],
 			CountryName: strings.ToUpper(row[6]),
-			Headquarter: row[1][8:] == "XXX",
+			Headquarter: strings.HasSuffix(row[1], "XXX"),
 		}
-		err := db.InsertCode(c, code)
-		if err != nil {
-			log.Printf("Failed to insert row %v: %v\n", row, err)
+		if err := code.Validate(); err != nil {
+			log.Printf("Invalid row #%d %v: %v\n", i+2, row, err)
+			continue
+		}
+		if err := db.InsertCode(c, code); err != nil {
+			log.Printf("Failed to insert row #%d %v: %v\n", i, row, err)
 		} else {
 			inserted++
 		}
