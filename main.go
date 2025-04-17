@@ -25,7 +25,9 @@ func main() {
 		if *loadFile == "" {
 			log.Fatalf("Usage: %s load -file=path/to/file.xlsx\n", os.Args[0])
 		}
-		log.Fatal(loader.LoadFromFile(*loadFile))
+		if err := loader.LoadFromFile(*loadFile); err != nil {
+			log.Fatal(err)
+		}
 	case "serve":
 		serveCmd.Parse(os.Args[2:])
 		server.Run()
