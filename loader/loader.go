@@ -14,6 +14,11 @@ func LoadFromFile(path string) {
 	c := context.Background()
 	db := database.Connect(c)
 	defer db.Close()
+	LoadFromFileWithDatabase(path, db)
+}
+
+func LoadFromFileWithDatabase(path string, db database.Database) {
+	c := context.Background()
 
 	f, err := excelize.OpenFile(path)
 	if err != nil {
