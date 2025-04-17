@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 
@@ -307,6 +306,5 @@ func TestMain(m *testing.M) {
 	}
 	address = fmt.Sprintf("http://%s:%s", host, port.Port())
 
-	exitCode := m.Run()
-	os.Exit(exitCode)
+	m.Run()
 }

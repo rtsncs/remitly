@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"log"
-	"os"
 	"testing"
 
 	"github.com/rtsncs/remitly-swift-api/models"
@@ -164,6 +163,5 @@ func TestMain(m *testing.M) {
 	db = ConnectWithConnString(c, connStr)
 	defer db.Close()
 
-	exitCode := m.Run()
-	os.Exit(exitCode)
+	m.Run()
 }
