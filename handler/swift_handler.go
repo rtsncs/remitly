@@ -31,7 +31,7 @@ func (h *Handler) GetCode(c echo.Context) error {
 		}
 		return err
 	}
-	if codeDetails.Headquarter {
+	if codeDetails.IsHeadquarter {
 		branches, err := h.db.GetBranches(c.Request().Context(), code)
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			return err

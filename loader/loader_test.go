@@ -57,16 +57,16 @@ func TestLoadFromFile(t *testing.T) {
 
 	bank, err := db.GetByCode(c, "AAISALTRXXX")
 	assert.NoError(t, err)
-	assert.Equal(t, "UNITED BANK OF ALBANIA SH.A", bank.Name)
+	assert.Equal(t, "UNITED BANK OF ALBANIA SH.A", bank.BankName)
 
 	hq, err := db.GetByCode(c, "BANKUS00XXX")
 	assert.NoError(t, err)
-	assert.True(t, hq.Headquarter)
+	assert.True(t, hq.IsHeadquarter)
 
 	branches, err := db.GetBranches(c, "BANKUS00XXX")
 	assert.NoError(t, err)
 	assert.Len(t, branches, 1)
-	assert.Equal(t, "BANKUS00NYC", branches[0].Code)
+	assert.Equal(t, "BANKUS00NYC", branches[0].SwiftCode)
 }
 
 func TestMain(m *testing.M) {

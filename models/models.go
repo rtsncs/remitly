@@ -31,22 +31,22 @@ func (fe FieldErrors) Error() string {
 }
 
 type SwiftCode struct {
-	Address     string `json:"address"`
-	Name        string `json:"bankName"`
-	CountryISO2 string `json:"countryISO2"`
-	CountryName string `json:"countryName,omitempty"`
-	Headquarter bool   `json:"isHeadquarter"`
-	Code        string `json:"swiftCode"`
+	Address       string `json:"address"`
+	BankName      string `json:"bankName"`
+	CountryISO2   string `json:"countryISO2"`
+	CountryName   string `json:"countryName,omitempty"`
+	IsHeadquarter bool   `json:"isHeadquarter"`
+	SwiftCode     string `json:"swiftCode"`
 }
 
 func (code *SwiftCode) Validate() error {
 	var fe FieldErrors
 
-	code.Code = strings.ToUpper(code.Code)
+	code.SwiftCode = strings.ToUpper(code.SwiftCode)
 	code.CountryISO2 = strings.ToUpper(code.CountryISO2)
 	code.CountryName = strings.ToUpper(code.CountryName)
 
-	if code.Name == "" {
+	if code.BankName == "" {
 		fe = append(fe, FieldError{"bankName", "is required"})
 	}
 
@@ -60,15 +60,15 @@ func (code *SwiftCode) Validate() error {
 		fe = append(fe, FieldError{"countryName", "is required"})
 	}
 
-	if code.Code == "" {
+	if code.SwiftCode == "" {
 		fe = append(fe, FieldError{"swiftCode", "is required"})
-	} else if !swiftCodeRegex.MatchString(code.Code) {
+	} else if !swiftCodeRegex.MatchString(code.SwiftCode) {
 		fe = append(fe, FieldError{"swiftCode", "is invalid"})
 	} else {
-		if code.Code[4:6] != code.CountryISO2 {
+		if code.SwiftCode[4:6] != code.CountryISO2 {
 			fe = append(fe, FieldError{"swiftCode", "doesn't match countryISO2"})
 		}
-		if (code.Code[8:] == "XXX") != code.Headquarter {
+		if (code.SwiftCode[8:] == "XXX") != code.IsHeadquarter {
 			fe = append(fe, FieldError{"isHeadquarter", "doesn't match swiftCode"})
 		}
 	}

@@ -51,12 +51,12 @@ func LoadFromFileWithDatabase(path string, db database.Database) error {
 				continue
 			}
 			code := models.SwiftCode{
-				CountryISO2: strings.ToUpper(row[0]),
-				Code:        row[1],
-				Name:        row[3],
-				Address:     row[4],
-				CountryName: strings.ToUpper(row[6]),
-				Headquarter: strings.HasSuffix(row[1], "XXX"),
+				CountryISO2:   strings.ToUpper(row[0]),
+				SwiftCode:     row[1],
+				BankName:      row[3],
+				Address:       row[4],
+				CountryName:   strings.ToUpper(row[6]),
+				IsHeadquarter: strings.HasSuffix(row[1], "XXX"),
 			}
 			if err := code.Validate(); err != nil {
 				log.Printf("Invalid row #%d %v: %v\n", printIndex, row, err)
