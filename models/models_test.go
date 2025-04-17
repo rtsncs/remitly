@@ -3,6 +3,8 @@ package models
 import (
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestValidateSwiftCode(t *testing.T) {
@@ -95,14 +97,10 @@ func TestValidateSwiftCode(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			err := tc.input.Validate()
-			if tc.wantErr && err == nil {
-				t.Errorf("Expected error but got nil")
-			}
-			if !tc.wantErr && err != nil {
-				t.Errorf("Unexpected error: %v", err)
-			}
-
-			if fe, ok := err.(FieldErrors); ok {
+			if tc.wantErr {
+				assert.Error(t, err)
+				var fe FieldErrors
+				assert.ErrorAs(t, err, &fe)
 				for _, msg := range tc.wantMsgs {
 					found := false
 					for _, field := range fe {
@@ -115,6 +113,8 @@ func TestValidateSwiftCode(t *testing.T) {
 						t.Errorf("Expected error containing field '%s', but it was missing in: %v", msg, fe)
 					}
 				}
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}

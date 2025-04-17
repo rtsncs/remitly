@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go/modules/compose"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -115,23 +116,16 @@ func TestAddCode(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			resp, err := http.Post(address+apiPrefix, "application/json", strings.NewReader(tc.input))
-			if err != nil {
-				t.Errorf("Failed to send request: %v\n", err)
-			}
+			assert.NoError(t, err, "failed to send request")
 			defer resp.Body.Close()
 
-			if resp.StatusCode != tc.status {
-				t.Errorf("Expected %d status code, got: %d\n", tc.status, resp.StatusCode)
-			}
+			assert.Equal(t, tc.status, resp.StatusCode)
 
 			bodyBytes, err := io.ReadAll(resp.Body)
-			if err != nil {
-				t.Errorf("Failed to read response body: %v\n", err)
-			}
+			assert.NoError(t, err, "failed to read response body")
+
 			body := strings.Trim(string(bodyBytes), "\n")
-			if string(body) != tc.output {
-				t.Errorf("Expected:\n%s\ngot:\n%s\n", tc.output, body)
-			}
+			assert.Equal(t, tc.output, string(body))
 		})
 	}
 }
@@ -166,27 +160,19 @@ func TestDeleteCode(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			req, err := http.NewRequest(http.MethodDelete, address+apiPrefix+tc.input, nil)
-			if err != nil {
-				t.Errorf("Failed to create request: %v\n", err)
-			}
+			assert.NoError(t, err, "failed to create request")
+
 			resp, err := http.DefaultClient.Do(req)
-			if err != nil {
-				t.Errorf("Failed to send request: %v\n", err)
-			}
+			assert.NoError(t, err, "failed to send request")
 			defer resp.Body.Close()
 
-			if resp.StatusCode != tc.status {
-				t.Errorf("Expected %d status code, got: %d\n", tc.status, resp.StatusCode)
-			}
+			assert.Equal(t, tc.status, resp.StatusCode)
 
 			bodyBytes, err := io.ReadAll(resp.Body)
-			if err != nil {
-				t.Errorf("Failed to read response body: %v\n", err)
-			}
+			assert.NoError(t, err, "failed to read response body")
+
 			body := strings.Trim(string(bodyBytes), "\n")
-			if string(body) != tc.output {
-				t.Errorf("Expected:\n%s\ngot:\n%s\n", tc.output, body)
-			}
+			assert.Equal(t, tc.output, body)
 		})
 	}
 }
@@ -227,23 +213,16 @@ func TestGetCode(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			resp, err := http.Get(address + apiPrefix + tc.input)
-			if err != nil {
-				t.Errorf("Failed to send request: %v\n", err)
-			}
+			assert.NoError(t, err, "failed to send request")
 			defer resp.Body.Close()
 
-			if resp.StatusCode != tc.status {
-				t.Errorf("Expected %d status code, got: %d\n", tc.status, resp.StatusCode)
-			}
+			assert.Equal(t, tc.status, resp.StatusCode)
 
 			bodyBytes, err := io.ReadAll(resp.Body)
-			if err != nil {
-				t.Errorf("Failed to read response body: %v\n", err)
-			}
+			assert.NoError(t, err, "failed to read response body")
+
 			body := strings.Trim(string(bodyBytes), "\n")
-			if string(body) != tc.output {
-				t.Errorf("Expected:\n%s\ngot:\n%s\n", tc.output, body)
-			}
+			assert.Equal(t, tc.output, string(body))
 		})
 	}
 }
@@ -272,23 +251,16 @@ func TestGetByCountryCode(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			resp, err := http.Get(address + apiPrefix + "/country/" + tc.input)
-			if err != nil {
-				t.Errorf("Failed to send request: %v\n", err)
-			}
+			assert.NoError(t, err, "failed to send request")
 			defer resp.Body.Close()
 
-			if resp.StatusCode != tc.status {
-				t.Errorf("Expected %d status code, got: %d\n", tc.status, resp.StatusCode)
-			}
+			assert.Equal(t, tc.status, resp.StatusCode)
 
 			bodyBytes, err := io.ReadAll(resp.Body)
-			if err != nil {
-				t.Errorf("Failed to read response body: %v\n", err)
-			}
+			assert.NoError(t, err, "failed to read response body")
+
 			body := strings.Trim(string(bodyBytes), "\n")
-			if string(body) != tc.output {
-				t.Errorf("Expected:\n%s\ngot:\n%s\n", tc.output, body)
-			}
+			assert.Equal(t, tc.output, string(body))
 		})
 	}
 }
