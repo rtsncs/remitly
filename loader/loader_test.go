@@ -94,7 +94,10 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Failed to get connection string: %v\n", err)
 	}
 
-	db = database.ConnectWithConnString(c, connStr)
+	db, err = database.ConnectWithConnString(c, connStr)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v\n", err)
+	}
 	defer db.Close()
 
 	m.Run()

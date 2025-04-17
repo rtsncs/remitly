@@ -2,6 +2,7 @@ package loader
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 
@@ -10,19 +11,22 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func LoadFromFile(path string) {
+func LoadFromFile(path string) error {
 	c := context.Background()
-	db := database.Connect(c)
+	db, err := database.Connect(c)
+	if err != nil {
+		return err
+	}
 	defer db.Close()
-	LoadFromFileWithDatabase(path, db)
+	return LoadFromFileWithDatabase(path, db)
 }
 
-func LoadFromFileWithDatabase(path string, db database.Database) {
+func LoadFromFileWithDatabase(path string, db database.Database) error {
 	c := context.Background()
 
 	f, err := excelize.OpenFile(path)
 	if err != nil {
-		log.Fatalf("Failed to open file: %v\n", err)
+		return fmt.Errorf("Failed to open file: %w", err)
 	}
 	defer f.Close()
 	log.Printf("Parsing file: %s\n", path)
@@ -69,4 +73,5 @@ func LoadFromFileWithDatabase(path string, db database.Database) {
 	}
 
 	log.Printf("Total rows: %d; Inserted %d; Failed: %d\n", total, inserted, failed)
+	return nil
 }

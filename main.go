@@ -16,7 +16,7 @@ func main() {
 	serveCmd := flag.NewFlagSet("serve", flag.ExitOnError)
 
 	if len(os.Args) < 2 {
-		log.Fatalln("expected 'load' or 'serve' subcommands")
+		log.Fatalln("expected 'load' or 'serve' subcommand")
 	}
 
 	switch os.Args[1] {
@@ -25,11 +25,11 @@ func main() {
 		if *loadFile == "" {
 			log.Fatalf("Usage: %s load -file=path/to/file.xlsx\n", os.Args[0])
 		}
-		loader.LoadFromFile(*loadFile)
+		log.Fatal(loader.LoadFromFile(*loadFile))
 	case "serve":
 		serveCmd.Parse(os.Args[2:])
-		server.Start()
+		server.Run()
 	default:
-		log.Fatalln("expected 'load' or 'serve' subcommands")
+		log.Fatalln("expected 'load' or 'serve' subcommand")
 	}
 }

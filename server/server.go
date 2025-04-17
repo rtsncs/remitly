@@ -14,7 +14,7 @@ import (
 	"github.com/rtsncs/remitly-swift-api/handler"
 )
 
-func Start() {
+func Run() {
 	host := os.Getenv("HOST")
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -23,7 +23,10 @@ func Start() {
 
 	e := echo.New()
 	e.Logger.SetLevel(log.INFO)
-	db := database.Connect(context.Background())
+	db, err := database.Connect(context.Background())
+	if err != nil {
+		e.Logger.Fatalf("Failed to connect to the database")
+	}
 	defer db.Close()
 	h := handler.New(&db)
 	e.Logger.Info("Connected to the database")

@@ -2,7 +2,7 @@ package database
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"os"
 
 	"github.com/jackc/pgx/v5"
@@ -14,30 +14,29 @@ type Database struct {
 	pool *pgxpool.Pool
 }
 
-func Connect(c context.Context) Database {
+func Connect(c context.Context) (Database, error) {
 	connStr := os.Getenv("DATABASE_URL")
 	if connStr == "" {
-		log.Fatalln("DATABASE_URL is not set")
+		return Database{}, fmt.Errorf("DATABASE_URL is not set")
 	}
 	return ConnectWithConnString(c, connStr)
 }
 
-func ConnectWithConnString(c context.Context, connStr string) Database {
+func ConnectWithConnString(c context.Context, connStr string) (Database, error) {
 	pool, err := pgxpool.New(c, connStr)
 	if err != nil {
-		log.Fatalf("Unable to create database connection pool: %v\n", err)
+		return Database{}, fmt.Errorf("Unable to create database connection pool: %w", err)
 	}
 	if err = pool.Ping(c); err != nil {
-		log.Fatalf("Failed to ping database: %v\n", err)
+		return Database{}, fmt.Errorf("Failed to ping database: %w", err)
 	}
-	log.Println("Connected to database")
 
 	db := Database{pool}
 	if err = db.createTable(c); err != nil {
-		log.Fatalf("Failed to create table: %v\n", err)
+		return Database{}, fmt.Errorf("Failed to create table: %w", err)
 	}
 
-	return db
+	return db, nil
 }
 
 func (db *Database) Close() {
