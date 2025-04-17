@@ -15,7 +15,15 @@ type Database struct {
 }
 
 func Connect(c context.Context) Database {
-	pool, err := pgxpool.New(c, os.Getenv("DATABASE_URL"))
+	connStr := os.Getenv("DATABASE_URL")
+	if connStr == "" {
+		log.Fatalln("DATABASE_URL is not set")
+	}
+	return ConnectWithConnString(c, connStr)
+}
+
+func ConnectWithConnString(c context.Context, connStr string) Database {
+	pool, err := pgxpool.New(c, connStr)
 	if err != nil {
 		log.Fatalf("Unable to create database connection pool: %v\n", err)
 	}
